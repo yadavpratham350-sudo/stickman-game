@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stickman: The Final Titan - Gold Edition</title>
+    <style>
+        body { 
+            margin: 0; 
+            background: #0a0a0a; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            color: white; 
+            font-family: 'Segoe UI', sans-serif; 
+            overflow: hidden; 
+        }
+        
+        canvas { 
+            border: 5px solid #333; 
+            background: #1a1a1a; 
+            box-shadow: 0 0 40px rgba(0,0,0,1); 
+            margin-top: 20px; 
+            display: none; 
+        }
+        
+        .ui-screen { 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            text-align: center; 
+            background: rgba(10, 10, 10, 0.98); 
+            padding: 30px; 
+            border-radius: 20px; 
+            border: 2px solid #00ccff; 
+            width: 550px; 
+            box-shadow: 0 0 50px rgba(0, 204, 255, 0.2); 
+            z-index: 10; 
+            display: none; 
+        }
+
+        #startMenu { display: block; }
+
+        .shop-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 15px; 
+            margin: 20px 0; 
+        }
+
+        .item-card { 
+            background: #222; 
+            padding: 15px; 
+            border-radius: 10px; 
+            border-left: 4px solid #00ccff; 
+            text-align: left; 
+        }
+
+        .item-card h4 { margin: 0; color: #00ccff; }
+        .item-card p { margin: 5px 0; font-size: 12px; color: #aaa; }
+
+        button { 
+            padding: 10px 20px; 
+            font-size: 14px; 
+            cursor: pointer; 
+            background: #00ccff; 
+            border: none; 
+            font-weight: bold; 
+            color: #111; 
+            border-radius: 5px; 
+            transition: 0.2s; 
+            text-transform: uppercase; 
+        }
+
+        button:hover { 
+            background: #fff; 
+            transform: translateY(-2px); 
+        }
+
+        button:disabled { 
+            background: #444; 
+            color: #888; 
+            cursor: not-allowed; 
+            transform: none; 
+        }
+
+        .currency-display { color: gold; font-weight: bold; font-size: 28px; }
+        
+        #ui-container { position: relative; width: 800px; display: none; margin-top: 20px;}
+
+        .top-bars { 
+            position: absolute; 
+            top: 10px; 
+            left: 10px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 8px; 
+            width: 220px; 
+        }
+
+        .bar-container { 
+            height: 14px; 
+            background: #333; 
+            border: 1px solid #555; 
+            position: relative; 
+            border-radius: 4px; 
+            overflow: hidden; 
+        }
+
+        .bar-fill { height: 100%; width: 100%; transition: width 0.1s linear; }
+
+        .bar-label { 
+            position: absolute; 
+            right: -95px; 
+            top: -1px; 
+            font-size: 11px; 
+            color: #fff; 
+            font-weight: bold; 
+            text-shadow: 1px 1px 2px black; 
+        }
+
+        #boss-ui { 
+            position: absolute; 
+            top: 15px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            width: 300px; 
+            text-align: center; 
+        }
+
+        #boss-name { 
+            font-size: 12px; 
+            font-weight: bold; 
+            color: #ff4444; 
+            text-transform: uppercase; 
+            margin-bottom: 4px; 
+            letter-spacing: 2px; 
+        }
+
+        #boss-bar-bg { 
+            width: 100%; 
+            height: 8px; 
+            background: #333; 
+            border: 1px solid #ff4444; 
+            border-radius: 10px; 
+            overflow: hidden; 
+        }
+
+        #boss-bar-fill { 
+            width: 100%; 
+            height: 100%; 
+            background: #ff4444; 
+            transition: width 0.3s ease; 
+        }
+    </style>
+</head>
+<body>
+
+    <div id="startMenu" class="ui-screen">
+        <h1 style="color: #00ccff; margin: 0; font-size: 50px;">STICKMAN</h1>
+        <h3 style="margin: 0; letter-spacing: 5px;">THE FINAL TITAN</h3>
+        <p>A/D: Move | W: Jump | S: Shield (Deflect) | Shift: Dash | Space: Power</p>
+        <button onclick="startGame()" style="font-size: 24px; padding: 15px 40px;">START GAME</button>
+    </div>
+
+    <div id="shopScreen" class="ui-screen">
+        <h1 style="color: gold; margin: 0;">ARENA STORE</h1>
+        <div class="currency-display">Gold: <span id="goldCount">0</span></div>
+        <div class="shop-grid">
+            <div class="item-card"><h4>Health Potion</h4><p>+30 Max HP</p><button onclick="buyItem('hp', 50)">50G</button></div>
+            <div class="item-card"><h4>Sharp Blade</h4><p>+4 Damage</p><button onclick="buyItem('dmg', 60)">60G</button></div>
+            <div class="item-card"><h4>Heavy Armor</h4><p>Defense +6</p><button id="buyArmor" onclick="buyItem('armor', 150)">150G</button></div>
+            <div class="item-card"><h4>Fire Aura</h4><p>Close range burn</p><button id="buyAura" onclick="buyItem('aura', 250)">250G</button></div>
+            <div class="item-card"><h4>Vampirism</h4><p>Heal on Hit</p><button id="buyVamp" onclick="buyItem('vamp', 300)">300G</button></div>
+            <div class="item-card"><h4>Agility</h4><p>Speed +2</p><button id="buySpeed" onclick="buyItem('speed', 100)">100G</button></div>
+        </div>
+        <button onclick="nextLevel()" style="background: #2ecc71; color: white; width: 100%;">START NEXT LEVEL</button>
+    </div>
+
+    <div id="defeatScreen" class="ui-screen">
+        <h1 style="color: #ff4444;">GAME OVER</h1>
+        <button onclick="location.reload()">TRY AGAIN</button>
+    </div>
+
+    <div id="victoryScreen" class="ui-screen">
+        <h1 style="color: gold;">TITAN SLAYER!</h1>
+        <p>You have conquered all 7 levels.</p>
+        <button onclick="location.reload()">PLAY AGAIN</button>
+    </div>
+
+    <div id="ui-container">
+        <div class="top-bars">
+            <div class="bar-container"><div id="hpBar" class="bar-fill" style="background: #ff4444;"></div><span class="bar-label">HEALTH</span></div>
+            <div class="bar-container"><div id="energyBar" class="bar-fill" style="background: gold; width: 0%;"></div><span class="bar-label">ENERGY</span></div>
+            <div class="bar-container"><div id="dashBar" class="bar-fill" style="background: #00ccff;"></div><span class="bar-label">DASH</span></div>
+            <div class="bar-container"><div id="shieldBar" class="bar-fill" style="background: #00ffcc;"></div><span class="bar-label">SHIELD</span></div>
+        </div>
+        <div id="boss-ui">
+            <div id="boss-name">ENEMY</div>
+            <div id="boss-bar-bg"><div id="boss-bar-fill"></div></div>
+        </div>
+        <div style="position:absolute; right:10px; top:10px; color:gold; font-weight:bold;">GOLD: <span id="hudGold">0</span></div>
+        <canvas id="gameCanvas" width="800" height="400"></canvas>
+    </div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let gameState = "MENU";
+let level = 1, gold = 0;
+let animationFrameId = null;
+let stats = { maxHp: 100, dmg: 6, armor: 0, aura: false, vamp: false, speed: 6 };
+
+const player = { x: 100, y: 300, dy: 0, jumping: false, energy: 0, hp: 100, shielding: false, shieldStamina: 100, dashCooldown: 0 };
+const enemy = { x: 650, y: 300, hp: 100, maxHp: 100, speed: 3, fireTimer: 0, type: 'normal', scale: 1, color: '#ff4444' };
+let fireballs = [], particles = [];
+
+const keys = {};
+window.onkeydown = (e) => keys[e.code] = true;
+window.onkeyup = (e) => keys[e.code] = false;
+
+function startLoop() {
+    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    gameLoop();
+}
+
+function startGame() {
+    document.getElementById('startMenu').style.display = "none";
+    document.getElementById('ui-container').style.display = "block";
+    canvas.style.display = "block";
+    gameState = "PLAYING";
+    resetEnemy();
+    startLoop();
+}
+
+function buyItem(type, cost) {
+    if (gold >= cost) {
+        gold -= cost;
+        if (type === 'hp') { stats.maxHp += 30; player.hp = stats.maxHp; }
+        if (type === 'dmg') stats.dmg += 4;
+        if (type === 'armor') { stats.armor += 6; document.getElementById('buyArmor').disabled = true; }
+        if (type === 'aura') { stats.aura = true; document.getElementById('buyAura').disabled = true; }
+        if (type === 'vamp') { stats.vamp = true; document.getElementById('buyVamp').disabled = true; }
+        if (type === 'speed') { stats.speed += 2; document.getElementById('buySpeed').disabled = true; }
+        updateUI();
+    }
+}
+
+function updateUI() {
+    document.getElementById('goldCount').innerText = gold;
+    document.getElementById('hudGold').innerText = gold;
+}
+
+function resetEnemy() {
+    enemy.x = 650; enemy.fireTimer = 0; enemy.scale = 1;
+    fireballs = []; particles = [];
+    let nameEl = document.getElementById('boss-name');
+    if (level === 4) { 
+        enemy.type = 'mini'; enemy.hp = 450; enemy.maxHp = 450; enemy.speed = 4.5; enemy.color = '#ff8800'; 
+        nameEl.innerText = "MINI-BOSS: SCORCH";
+    } else if (level === 7) { 
+        enemy.type = 'titan'; enemy.hp = 1800; enemy.maxHp = 1800; enemy.speed = 2.5; enemy.scale = 2.5; enemy.color = '#ff00ff'; 
+        nameEl.innerText = "THE TITAN";
+    } else { 
+        enemy.type = 'normal'; enemy.hp = 120 + (level * 60); enemy.maxHp = enemy.hp; enemy.speed = 3 + (level * 0.4); enemy.color = '#ff4444'; 
+        nameEl.innerText = "ARENA GUARD - LEVEL " + level;
+    }
+}
+
+function nextLevel() {
+    if (level >= 7) return;
+    level++;
+    document.getElementById('shopScreen').style.display = "none";
+    player.hp = stats.maxHp; player.energy = 0; player.shieldStamina = 100;
+    resetEnemy();
+    gameState = "PLAYING";
+    startLoop();
+}
+
+function drawStickman(x, y, color, scale, isShielding) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+    ctx.strokeStyle = color; ctx.lineWidth = 3;
+    if (isShielding) {
+        ctx.beginPath(); ctx.arc(10, 20, 35, 0, 7);
+        ctx.strokeStyle = "rgba(0, 255, 204, 0.4)"; ctx.stroke();
+    }
+    ctx.beginPath(); ctx.arc(10, 0, 8, 0, 7); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(10, 8); ctx.lineTo(10, 30); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, 15); ctx.lineTo(20, 15); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(10, 30); ctx.lineTo(0, 50); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(10, 30); ctx.lineTo(20, 50); ctx.stroke();
+    ctx.restore();
+}
+
+function update() {
+    if (gameState !== "PLAYING") return;
+
+    player.shielding = keys['KeyS'] && player.shieldStamina > 0;
+    if (player.shielding) player.shieldStamina -= 0.8;
+    else if (player.shieldStamina < 100) player.shieldStamina += 0.5;
+
+    if (!player.shielding) {
+        if (keys['KeyA']) player.x -= stats.speed;
+        if (keys['KeyD']) player.x += stats.speed;
+        if (keys['KeyW'] && !player.jumping) { player.dy = -15; player.jumping = true; }
+        if (keys['ShiftLeft'] && player.dashCooldown <= 0) {
+            player.x += 140 * (keys['KeyA'] ? -1 : 1);
+            player.dashCooldown = 60;
+        }
+    }
+    if (player.dashCooldown > 0) player.dashCooldown--;
+    player.dy += 0.8; player.y += player.dy;
+    if (player.y > 300) { player.y = 300; player.dy = 0; player.jumping = false; }
+
+    if (stats.aura && Math.abs(player.x - enemy.x) < 100) {
+        enemy.hp -= 0.3;
+        if (Math.random() > 0.9) particles.push({x: enemy.x, y: enemy.y+20, vx: 0, vy: -2, life: 10, color: '#f50'});
+    }
+
+    enemy.fireTimer++;
+    let rate = (enemy.type === 'titan') ? 35 : 75;
+    if (enemy.fireTimer > rate) {
+        let fSpeed = (enemy.x > player.x ? -8 : 8);
+        fireballs.push({ x: enemy.x, y: enemy.y + 15, speed: fSpeed, owner: 'enemy', dy: 0 });
+        if (enemy.type === 'titan') {
+            fireballs.push({ x: enemy.x, y: enemy.y + 15, speed: fSpeed, dy: -3, owner: 'enemy' });
+            fireballs.push({ x: enemy.x, y: enemy.y + 15, speed: fSpeed, dy: 3, owner: 'enemy' });
+        }
+        enemy.fireTimer = 0;
+    }
+
+    let stopDist = (enemy.type === 'titan' ? 220 : 100);
+    if (Math.abs(player.x - enemy.x) > stopDist) enemy.x += (enemy.x > player.x ? -enemy.speed : enemy.speed);
+
+    player.x = Math.max(0, Math.min(780, player.x));
+    enemy.x = Math.max(0, Math.min(780, enemy.x));
+
+    fireballs.forEach((f, i) => {
+        f.x += f.speed; f.y += f.dy;
+        if (f.owner === 'enemy' && Math.abs(f.x - player.x) < 25 && Math.abs(f.y - player.y) < 50) {
+            if (player.shielding) { f.owner = 'player'; f.speed *= -1.5; f.dy = (Math.random()-0.5)*5; } 
+            else { player.hp -= Math.max(2, 20 - stats.armor); fireballs.splice(i, 1); }
+        }
+        if (f.owner === 'player' && Math.abs(f.x - enemy.x) < 40 * enemy.scale && Math.abs(f.y - enemy.y) < 60 * enemy.scale) {
+            enemy.hp -= stats.dmg * 2.5; gold += 5; fireballs.splice(i, 1); updateUI();
+        }
+    });
+
+    if (Math.abs(player.x - enemy.x) < 50 * enemy.scale && !player.shielding) {
+        enemy.hp -= stats.dmg; gold += 2;
+        player.energy = Math.min(100, player.energy + 4);
+        if (stats.vamp) player.hp = Math.min(stats.maxHp, player.hp + 2);
+        enemy.x += (enemy.x > player.x ? 35 : -35);
+        updateUI();
+    }
+
+    if (keys['Space'] && player.energy >= 100) {
+        enemy.hp -= 200; player.energy = 0;
+        for(let i=0; i<30; i++) particles.push({x: enemy.x, y: enemy.y, vx: (Math.random()-0.5)*20, vy: (Math.random()-0.5)*20, life: 30, color: 'cyan'});
+    }
+
+    particles.forEach((p, i) => { p.x += p.vx; p.y += p.vy; p.life--; if (p.life <= 0) particles.splice(i, 1); });
+
+    document.getElementById('hpBar').style.width = Math.max(0, (player.hp/stats.maxHp*100)) + "%";
+    document.getElementById('energyBar').style.width = player.energy + "%";
+    document.getElementById('dashBar').style.width = (1 - player.dashCooldown/60)*100 + "%";
+    document.getElementById('shieldBar').style.width = player.shieldStamina + "%";
+    document.getElementById('boss-bar-fill').style.width = Math.max(0, (enemy.hp/enemy.maxHp*100)) + "%";
+
+    if (enemy.hp <= 0) {
+        gold += 200; updateUI();
+        gameState = (level === 7) ? "VICTORY" : "SHOP";
+        if (gameState === "VICTORY") document.getElementById('victoryScreen').style.display = "block";
+        else document.getElementById('shopScreen').style.display = "block";
+    }
+    if (player.hp <= 0) {
+        gameState = "DEFEAT";
+        document.getElementById('defeatScreen').style.display = "block";
+    }
+}
+
+function draw() {
+    ctx.clearRect(0, 0, 800, 400);
+    ctx.fillStyle = '#111'; ctx.fillRect(0, 350, 800, 50);
+    if (stats.aura) {
+        ctx.beginPath(); ctx.arc(player.x+10, player.y+25, 80, 0, 7);
+        ctx.strokeStyle = "rgba(255, 100, 0, 0.2)"; ctx.lineWidth = 5; ctx.stroke();
+    }
+    fireballs.forEach(f => { 
+        ctx.fillStyle = f.owner === 'player' ? '#0ff' : '#f80'; 
+        ctx.beginPath(); ctx.arc(f.x, f.y, 8, 0, 7); ctx.fill(); 
+    });
+    drawStickman(player.x, player.y, '#00ccff', 1, player.shielding);
+    drawStickman(enemy.x, enemy.y - (enemy.scale > 1 ? 60 : 0), enemy.color, enemy.scale, false);
+    particles.forEach(p => { ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, 4, 4); });
+}
+
+function gameLoop() {
+    update(); draw();
+    if (gameState === "PLAYING") {
+        animationFrameId = requestAnimationFrame(gameLoop);
+    }
+}
+</script>
+</body>
+</html>
